@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <meta name="description" content="Taller interactivo para practicar grafos y árboles." />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cg fill='none' stroke='%23172B4D' stroke-width='5'%3E%3Cpath d='M32 12 16 32m16-20 16 20M16 32v18m32-18v18'/%3E%3C/g%3E%3Cg fill='%232F6FEB'%3E%3Ccircle cx='32' cy='12' r='8'/%3E%3Ccircle cx='16' cy='32' r='8'/%3E%3Ccircle cx='48' cy='32' r='8'/%3E%3Ccircle cx='16' cy='52' r='8'/%3E%3Ccircle cx='48' cy='52' r='8'/%3E%3C/g%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="./styles.css?v=14" />
+    <title>Taller de Estructuras</title>
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#inicio" aria-label="Ir al inicio">
+        <span class="brand-mark" aria-hidden="true">
+          <i></i><i></i><i></i>
+        </span>
+        <span>Taller de Estructuras</span>
+      </a>
+      <button class="profile-button" type="button" aria-label="Perfil del jugador">
+        <span aria-hidden="true">J</span>
+      </button>
+    </header>
+
+    <main id="inicio" data-screen="hub">
+      <section class="intro" aria-labelledby="page-title">
+        <div>
+          <p class="eyebrow">Algoritmos y Estructuras de Datos II</p>
+          <h1 id="page-title">¿Qué querés practicar?</h1>
+          <p class="intro-copy">Elegí un tema para entrar al taller. Los ejercicios se incorporarán módulo por módulo.</p>
+        </div>
+        <div class="progress-summary" aria-label="Progreso general">
+          <span>Progreso general</span>
+          <strong>0%</strong>
+          <div class="progress-track"><div></div></div>
+        </div>
+      </section>
+
+      <section class="laboratory-section" aria-labelledby="lab-module-title">
+        <div class="laboratory-intro">
+          <span class="module-number lab-number" aria-hidden="true">✦</span>
+          <div>
+            <p class="eyebrow">Zona independiente</p>
+            <h2 id="lab-module-title">Laboratorio</h2>
+            <p>Creá y experimentá libremente, sin lecciones ni consignas.</p>
+          </div>
+        </div>
+        <div class="topic-grid lab-topic-grid" data-module="LAB"></div>
+      </section>
+
+      <div class="modules-label">
+        <p class="eyebrow">Recorrido de aprendizaje</p>
+        <h2>Módulos</h2>
+      </div>
+
+      <section class="module" aria-labelledby="module-1-title">
+        <div class="module-heading">
+          <span class="module-number">M1</span>
+          <div>
+            <h2 id="module-1-title">Grafos</h2>
+            <p>Relaciones, caminos y conexiones.</p>
+          </div>
+        </div>
+        <div class="topic-grid" data-module="M1"></div>
+      </section>
+
+      <section class="module" aria-labelledby="module-2-title">
+        <div class="module-heading">
+          <span class="module-number">M2</span>
+          <div>
+            <h2 id="module-2-title">Fundamentos de árboles</h2>
+            <p>Jerarquías, estructuras binarias y recorridos.</p>
+          </div>
+        </div>
+        <div class="topic-grid" data-module="M2"></div>
+      </section>
+
+      <section class="module" aria-labelledby="module-3-title">
+        <div class="module-heading">
+          <span class="module-number">M3</span>
+          <div>
+            <h2 id="module-3-title">Árboles de búsqueda y balanceo</h2>
+            <p>Orden, operaciones y estructuras autobalanceables.</p>
+          </div>
+        </div>
+        <div class="topic-grid" data-module="M3"></div>
+      </section>
+
+      <section class="module" aria-labelledby="module-4-title">
+        <div class="module-heading">
+          <span class="module-number">M4</span>
+          <div>
+            <h2 id="module-4-title">Aplicaciones</h2>
+            <p>Árboles aplicados a problemas concretos.</p>
+          </div>
+        </div>
+        <div class="topic-grid" data-module="M4"></div>
+      </section>
+    </main>
+
+    <main id="lesson-screen" class="lesson-screen" data-screen="lesson" hidden>
+      <header class="lesson-header">
+        <button class="lesson-exit" type="button" data-lesson-exit aria-label="Volver al hub">←</button>
+        <div class="lesson-heading">
+          <span id="lesson-kicker">M1 · Lección 1</span>
+          <strong id="lesson-name">Componentes de un grafo</strong>
+        </div>
+        <span id="lesson-counter" class="lesson-counter">1 / 4</span>
+      </header>
+      <div class="lesson-progress" aria-hidden="true"><div id="lesson-progress-bar"></div></div>
+
+      <section class="lesson-workspace" aria-live="polite">
+        <article class="lesson-copy">
+          <p class="eyebrow" id="lesson-step-label"></p>
+          <h1 id="lesson-step-title"></h1>
+          <p id="lesson-step-text"></p>
+          <div id="lesson-key" class="lesson-key" hidden></div>
+        </article>
+        <div class="graph-panel">
+          <div id="graph-stage" class="graph-stage" aria-label="Representación visual del grafo"></div>
+          <p id="graph-caption" class="graph-caption"></p>
+        </div>
+      </section>
+
+      <footer class="lesson-controls">
+        <button class="lesson-back" type="button" data-lesson-back>Anterior</button>
+        <button class="lesson-next" type="button" data-lesson-next>Siguiente <span aria-hidden="true">→</span></button>
+      </footer>
+    </main>
+
+    <main id="lab-screen" class="lab-screen" data-screen="lab" hidden>
+      <header class="lesson-header">
+        <button class="lesson-exit" type="button" data-lab-exit aria-label="Volver al hub">←</button>
+        <div class="lesson-heading">
+          <span>Laboratorio · Modo libre</span>
+          <strong>Laboratorio de grafos</strong>
+        </div>
+        <span class="lab-status" data-lab-count>0 vértices</span>
+      </header>
+
+      <section class="lab-layout">
+        <aside class="lab-sidebar">
+          <div>
+            <p class="eyebrow">Tipo de grafo</p>
+            <div class="graph-type-list" data-graph-types></div>
+          </div>
+          <div>
+            <p class="eyebrow">Herramientas</p>
+            <div class="lab-tools">
+              <button type="button" data-tool="move">Mover</button>
+              <button type="button" data-tool="node">Crear vértice</button>
+              <button type="button" data-tool="edge">Conectar</button>
+              <button type="button" data-tool="delete">Borrar</button>
+            </div>
+          </div>
+          <div class="lab-secondary-actions">
+            <button type="button" data-lab-undo>Deshacer</button>
+            <button type="button" data-lab-clear>Limpiar</button>
+          </div>
+        </aside>
+
+        <section class="lab-canvas-panel">
+          <div class="lab-instruction">
+            <strong data-lab-tool-name>Mover vértices</strong>
+            <span data-lab-instruction>Arrastrá cualquier vértice para cambiar su posición.</span>
+          </div>
+          <div id="graph-editor" class="graph-editor" aria-label="Editor libre de grafos"></div>
+          <p class="lab-feedback" data-lab-feedback aria-live="polite">Elegí “Crear vértice” para comenzar.</p>
+        </section>
+      </section>
+    </main>
+
+    <main id="exercise-screen" class="lab-screen" data-screen="exercises" hidden>
+      <header class="lesson-header">
+        <button class="lesson-exit" type="button" data-exercise-exit aria-label="Volver al hub">←</button>
+        <div class="lesson-heading">
+          <span>M1 · Práctica</span>
+          <strong>Ejercicios guiados</strong>
+        </div>
+        <span class="lab-status" data-exercise-live>0 vértices · 0 conexiones</span>
+      </header>
+      <div class="lesson-progress exercise-progress" aria-hidden="true"><div data-exercise-progress></div></div>
+
+      <section class="exercise-layout">
+        <aside class="exercise-mission">
+          <p class="eyebrow" data-exercise-number></p>
+          <h1 data-exercise-title></h1>
+          <p data-exercise-instruction></p>
+          <span class="exercise-type" data-exercise-type></span>
+          <div class="lab-tools exercise-tools">
+            <button type="button" data-tool="move">Mover</button>
+            <button type="button" data-tool="node">Crear vértice</button>
+            <button type="button" data-tool="edge">Conectar</button>
+            <button type="button" data-tool="delete">Borrar</button>
+          </div>
+          <div class="lab-secondary-actions">
+            <button type="button" data-lab-undo>Deshacer</button>
+            <button type="button" data-lab-clear>Limpiar</button>
+          </div>
+          <div data-graph-types hidden></div>
+        </aside>
+
+        <section class="lab-canvas-panel">
+          <div class="lab-instruction">
+            <strong data-lab-tool-name>Crear vértice</strong>
+            <span data-lab-instruction>Hacé clic en un espacio libre del tablero.</span>
+          </div>
+          <div id="exercise-editor" class="graph-editor" aria-label="Tablero del ejercicio"></div>
+          <p class="lab-feedback" data-lab-feedback aria-live="polite"></p>
+          <div class="exercise-actions">
+            <button type="button" class="lesson-next" data-exercise-check>Comprobar solución</button>
+            <button type="button" class="lesson-next" data-exercise-next hidden>Siguiente ejercicio →</button>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <main id="project-lab-screen" class="lab-screen project-lab-screen" data-screen="project-lab" hidden>
+      <header class="lesson-header">
+        <button class="lesson-exit" type="button" data-project-exit aria-label="Volver al hub">←</button>
+        <div class="lesson-heading">
+          <span>Laboratorio · Redes de proyectos</span>
+          <strong>CPM / PERT</strong>
+        </div>
+        <span class="lab-status" data-project-count>0/50 nodos · 0 actividades</span>
+      </header>
+
+      <section class="project-lab-layout">
+        <aside class="lab-sidebar project-sidebar">
+          <div>
+            <p class="eyebrow">Método</p>
+            <div class="project-mode-switch">
+              <button type="button" data-project-mode="cpm">CPM</button>
+              <button type="button" data-project-mode="pert">PERT</button>
+            </div>
+          </div>
+          <div>
+            <p class="eyebrow">Herramientas</p>
+            <div class="lab-tools">
+              <button type="button" data-project-tool="move">Mover nodos</button>
+              <button type="button" data-project-tool="node">Crear evento</button>
+              <button type="button" data-project-tool="edge">Crear actividad</button>
+              <button type="button" data-project-tool="delete">Borrar</button>
+            </div>
+          </div>
+          <div class="project-navigation-help">
+            <strong>Navegación</strong>
+            <span>Rueda: zoom</span>
+            <span>Botón central: mover lienzo</span>
+            <span>Clic + Delete: borrar selección</span>
+            <span>Doble clic: editar datos</span>
+          </div>
+          <div class="project-zoom-controls">
+            <button type="button" data-project-zoom-out aria-label="Alejar">−</button>
+            <span data-project-zoom>100%</span>
+            <button type="button" data-project-zoom-in aria-label="Acercar">+</button>
+            <button type="button" data-project-fit>Encuadrar</button>
+            <button type="button" class="project-export" data-project-export>Exportar SVG</button>
+            <button type="button" class="project-export secondary" data-project-export-json>Exportar JSON</button>
+            <button type="button" class="project-export secondary" data-project-import>Importar JSON</button>
+            <input type="file" accept="application/json,.json" data-project-file hidden />
+          </div>
+          <div class="lab-secondary-actions">
+            <button type="button" data-project-undo>Deshacer</button>
+            <button type="button" data-project-clear>Limpiar</button>
+          </div>
+        </aside>
+
+        <section class="lab-canvas-panel project-canvas-panel">
+          <div class="lab-instruction">
+            <strong data-project-tool-name>Mover nodos</strong>
+            <span data-project-instruction>Arrastrá un nodo. Usá el botón central para desplazar el lienzo.</span>
+          </div>
+          <div id="project-network-editor" class="project-network-editor"></div>
+          <p class="lab-feedback" data-project-feedback aria-live="polite">Elegí “Crear evento” para comenzar.</p>
+        </section>
+      </section>
+
+      <dialog id="activity-dialog" class="activity-dialog">
+        <form method="dialog">
+          <p class="eyebrow">Nueva actividad · <span data-activity-mode>CPM</span></p>
+          <h2 data-activity-title>Datos del arco</h2>
+          <label>Actividad <input name="activity" type="text" maxlength="32" placeholder="A o Diseño" required /></label>
+          <div data-cpm-fields>
+            <label>Tiempo estimado <input name="duration" type="number" min="0" step="0.01" placeholder="4" /></label>
+          </div>
+          <div class="pert-fields" data-pert-fields hidden>
+            <label>Optimista <input name="optimistic" type="number" min="0" step="0.01" placeholder="2" /></label>
+            <label>Más probable <input name="likely" type="number" min="0" step="0.01" placeholder="4" /></label>
+            <label>Pesimista <input name="pessimistic" type="number" min="0" step="0.01" placeholder="8" /></label>
+          </div>
+          <div class="activity-dialog-actions">
+            <button type="button" data-activity-cancel>Cancelar</button>
+            <button type="submit" data-activity-submit>Crear actividad</button>
+          </div>
+        </form>
+      </dialog>
+
+      <dialog id="node-dialog" class="activity-dialog node-dialog">
+        <form method="dialog">
+          <p class="eyebrow">Editar nodo</p>
+          <h2>Número del evento</h2>
+          <label>Número <input name="nodeNumber" type="number" min="0" step="1" required /></label>
+          <small class="dialog-error" data-node-error aria-live="polite"></small>
+          <div class="activity-dialog-actions">
+            <button type="button" data-node-cancel>Cancelar</button>
+            <button type="submit">Guardar</button>
+          </div>
+        </form>
+      </dialog>
+    </main>
+
+    <dialog id="topic-dialog">
+      <button class="dialog-close" type="button" aria-label="Cerrar">×</button>
+      <p class="eyebrow" id="dialog-module"></p>
+      <h2 id="dialog-title"></h2>
+      <div class="empty-graphic" aria-hidden="true"><span></span><span></span><span></span></div>
+      <p>Este taller todavía está vacío.</p>
+      <small>Acá vamos a construir los niveles de práctica.</small>
+      <button class="dialog-action" type="button">Volver al hub</button>
+    </dialog>
+
+    <script type="module" src="./app.js?v=13"></script>
+  </body>
+</html>
