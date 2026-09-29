@@ -8,7 +8,7 @@
     <meta http-equiv="Expires" content="0" />
     <meta name="description" content="Taller interactivo para practicar grafos y árboles." />
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cg fill='none' stroke='%23172B4D' stroke-width='5'%3E%3Cpath d='M32 12 16 32m16-20 16 20M16 32v18m32-18v18'/%3E%3C/g%3E%3Cg fill='%232F6FEB'%3E%3Ccircle cx='32' cy='12' r='8'/%3E%3Ccircle cx='16' cy='32' r='8'/%3E%3Ccircle cx='48' cy='32' r='8'/%3E%3Ccircle cx='16' cy='52' r='8'/%3E%3Ccircle cx='48' cy='52' r='8'/%3E%3C/g%3E%3C/svg%3E" />
-    <link rel="stylesheet" href="./styles.css?v=14" />
+    <link rel="stylesheet" href="./styles.css?v=30" />
     <title>Taller de Estructuras</title>
   </head>
   <body>
@@ -217,6 +217,70 @@
       </section>
     </main>
 
+    <main id="traversal-screen" class="lab-screen traversal-screen" data-screen="traversal" hidden>
+      <header class="lesson-header">
+        <button class="lesson-exit" type="button" data-traversal-exit aria-label="Volver al hub">←</button>
+        <div class="lesson-heading">
+          <span data-traversal-kicker>M2.5 · Práctica</span>
+          <strong data-traversal-name>Recorrido preorden</strong>
+        </div>
+        <span class="lesson-counter" data-traversal-counter>1 / 3</span>
+      </header>
+      <div class="lesson-progress" aria-hidden="true"><div data-traversal-progress></div></div>
+
+      <section class="traversal-config" data-traversal-config hidden>
+        <label>Tipo de recorrido
+          <select data-traversal-type>
+            <option value="preorder">Preorden</option>
+            <option value="inorder">Inorden</option>
+            <option value="postorder">Posorden</option>
+          </select>
+        </label>
+        <label>Tamaño del árbol
+          <select data-traversal-size>
+            <option value="small">Chico · 7 nodos</option>
+            <option value="medium">Mediano · 11 nodos</option>
+            <option value="large">Grande · 15 nodos</option>
+            <option value="xlarge">Muy grande · 20 nodos</option>
+          </select>
+        </label>
+        <label>Forma de corrección
+          <select data-traversal-correction>
+            <option value="guided">Guiada · marca el error</option>
+            <option value="reset">Desafío · reinicia al errar</option>
+            <option value="free">Libre · comprobar al final</option>
+          </select>
+        </label>
+        <button type="button" class="lesson-next" data-traversal-generate>Generar otro árbol</button>
+      </section>
+
+      <section class="traversal-layout">
+        <aside class="traversal-mission">
+          <p class="eyebrow" data-traversal-level></p>
+          <h1 data-traversal-title></h1>
+          <p data-traversal-instruction></p>
+          <div class="traversal-rule">
+            <span data-traversal-rule-name>Regla de preorden</span>
+            <strong data-traversal-rule>Raíz → Izquierda → Derecha</strong>
+          </div>
+          <p class="traversal-feedback" data-traversal-feedback aria-live="polite"></p>
+        </aside>
+
+        <section class="traversal-board">
+          <div id="traversal-tree" class="traversal-tree" aria-label="Árbol interactivo"></div>
+          <label class="traversal-sequence">
+            <span>Tu recorrido</span>
+            <input type="text" data-traversal-sequence readonly placeholder="Hacé clic en el primer nodo" />
+          </label>
+          <div class="traversal-actions">
+            <button type="button" class="lesson-back" data-traversal-clear>Empezar de nuevo</button>
+            <button type="button" class="lesson-next" data-traversal-check hidden>Comprobar</button>
+            <button type="button" class="lesson-next" data-traversal-next hidden>Siguiente árbol →</button>
+          </div>
+        </section>
+      </section>
+    </main>
+
     <main id="project-lab-screen" class="lab-screen project-lab-screen" data-screen="project-lab" hidden>
       <header class="lesson-header">
         <button class="lesson-exit" type="button" data-project-exit aria-label="Volver al hub">←</button>
@@ -322,6 +386,6 @@
       <button class="dialog-action" type="button">Volver al hub</button>
     </dialog>
 
-    <script type="module" src="./app.js?v=13"></script>
+    <script type="module" src="./app.js?v=32"></script>
   </body>
 </html>

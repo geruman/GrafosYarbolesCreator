@@ -22,7 +22,7 @@ body {
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-body.lesson-open { overflow: hidden; }
+body.lesson-open { overflow-x: hidden; overflow-y: auto; }
 
 button, a { font: inherit; }
 
@@ -237,7 +237,7 @@ h2 { margin: 0; font-size: 1.45rem; letter-spacing: -0.02em; }
 
 .lesson-screen {
   width: min(1220px, 92vw);
-  height: calc(100vh - 68px);
+  min-height: calc(100vh - 68px);
   padding: 26px 0 30px;
 }
 
@@ -331,11 +331,24 @@ h2 { margin: 0; font-size: 1.45rem; letter-spacing: -0.02em; }
 .graph-stage svg { width: 100%; max-height: 430px; overflow: visible; }
 .graph-edge { fill: none; stroke: #9aa8bd; stroke-width: 5; stroke-linecap: round; transition: stroke 220ms ease, stroke-width 220ms ease; }
 .graph-edge.is-active { stroke: var(--accent); stroke-width: 7; }
+.graph-edge-label { fill: var(--ink); stroke: white; stroke-width: 7; paint-order: stroke; font-size: 16px; font-weight: 850; }
 .graph-arrowhead { fill: var(--accent); }
-.graph-node circle { fill: white; stroke: var(--ink); stroke-width: 4; transition: fill 220ms ease, stroke 220ms ease, transform 220ms ease; transform-box: fill-box; transform-origin: center; }
+.graph-node circle, .graph-node rect { fill: white; stroke: var(--ink); stroke-width: 4; transition: fill 220ms ease, stroke 220ms ease, transform 220ms ease; transform-box: fill-box; transform-origin: center; }
 .graph-node text { fill: var(--ink); font-size: 18px; font-weight: 800; pointer-events: none; }
-.graph-node.is-active circle { fill: var(--accent); stroke: var(--accent); transform: scale(1.12); }
+.graph-node.is-active circle, .graph-node.is-active rect { fill: var(--accent); stroke: var(--accent); transform: scale(1.08); }
 .graph-node.is-active text { fill: white; }
+.graph-node.is-red circle, .graph-node.is-red rect { fill: #df3b47; stroke: #9e202b; }
+.graph-node.is-red text { fill: white; }
+.graph-node.is-black circle, .graph-node.is-black rect { fill: #172b4d; stroke: #0b172c; }
+.graph-node.is-black text { fill: white; }
+.traversal-tree .graph-node { cursor: pointer; }
+.traversal-tree .graph-node:hover circle { stroke: var(--accent); transform: scale(1.06); }
+.graph-node.is-visited circle { fill: var(--accent); stroke: var(--accent); }
+.graph-node.is-visited text { fill: white; }
+.graph-node.is-wrong circle { fill: #e84d5b; stroke: #ae2635; animation: traversal-error 180ms ease 2; }
+.graph-node.is-wrong text { fill: white; }
+.visit-badge circle { fill: var(--accent); stroke: white; stroke-width: 3; }
+.visit-badge text { fill: white; font-size: 12px; font-weight: 850; }
 .travel-dot { fill: #ffb020; stroke: white; stroke-width: 4; filter: drop-shadow(0 3px 5px rgba(22, 35, 58, 0.25)); }
 .travel-dot.is-blocked { fill: #e84d5b; }
 .blocked-mark circle { fill: white; stroke: #e84d5b; stroke-width: 4; }
@@ -346,6 +359,21 @@ h2 { margin: 0; font-size: 1.45rem; letter-spacing: -0.02em; }
   display: flex;
   justify-content: space-between;
   margin-top: 24px;
+  padding-bottom: 4px;
+}
+
+@media (min-width: 901px) and (max-height: 1000px) {
+  .lesson-screen { padding-top: 20px; padding-bottom: 22px; }
+  .lesson-progress { margin: 14px 0 18px; }
+  .lesson-workspace { min-height: 0; gap: clamp(24px, 4vw, 58px); }
+  .lesson-copy h1 { font-size: clamp(2.1rem, 3.5vw, 3.65rem); line-height: 1.02; }
+  .lesson-copy > p:not(.eyebrow) { margin-top: 16px; font-size: 1rem; line-height: 1.6; }
+  .lesson-key { margin-top: 18px; padding: 13px 16px; }
+  .graph-panel { padding: 16px; }
+  .graph-stage { min-height: clamp(300px, 48vh, 390px); }
+  .graph-stage svg { max-height: clamp(300px, 48vh, 390px); }
+  .graph-caption { margin-top: 10px; }
+  .lesson-controls { margin-top: 18px; }
 }
 
 .lab-screen {
@@ -373,6 +401,36 @@ h2 { margin: 0; font-size: 1.45rem; letter-spacing: -0.02em; }
 .exercise-tools { margin-top: 4px; }
 .exercise-actions { display: flex; justify-content: flex-end; padding: 4px; }
 .exercise-actions .lesson-next { min-width: 190px; padding: 13px 20px; border-radius: 13px; font-weight: 750; cursor: pointer; }
+
+.traversal-screen { width: min(1180px, 94vw); }
+.traversal-config { display: grid; grid-template-columns: repeat(3, minmax(160px, 1fr)) auto; gap: 14px; align-items: end; margin-bottom: 20px; padding: 18px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); }
+.traversal-config[hidden] { display: none; }
+.traversal-config label { display: grid; gap: 7px; color: var(--muted); font-size: 0.82rem; font-weight: 750; }
+.traversal-config select { width: 100%; padding: 11px 12px; border: 1px solid var(--line); border-radius: 11px; background: white; color: var(--ink); font: inherit; }
+.traversal-config button { padding: 12px 18px; border-radius: 12px; font-weight: 750; cursor: pointer; }
+.traversal-layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 24px; }
+.traversal-mission,
+.traversal-board { border: 1px solid var(--line); border-radius: 22px; background: var(--surface); }
+.traversal-mission { display: flex; flex-direction: column; gap: 18px; padding: 26px; }
+.traversal-mission h1 { font-size: 1.7rem; line-height: 1.15; }
+.traversal-mission > p:not(.eyebrow) { color: var(--muted); line-height: 1.6; }
+.traversal-rule { display: grid; gap: 7px; padding: 16px; border-radius: 14px; background: var(--accent-soft); }
+.traversal-rule span { color: var(--muted); font-size: 0.8rem; font-weight: 700; }
+.traversal-rule strong { color: #164da9; }
+.traversal-feedback { min-height: 48px; margin-top: auto; color: var(--muted); line-height: 1.5; }
+.traversal-feedback.is-error { color: #c23645; font-weight: 750; }
+.traversal-feedback.is-success { color: #18764a; font-weight: 750; }
+.traversal-board { min-width: 0; padding: 18px; }
+.traversal-tree { display: grid; min-height: 450px; overflow: hidden; border-radius: 16px; background: radial-gradient(circle at 1px 1px, #dfe5ef 1px, transparent 1.5px) 0 0 / 24px 24px, #fafbfe; place-items: center; }
+.traversal-tree svg { width: 100%; max-height: 450px; }
+.traversal-sequence { display: grid; gap: 7px; margin-top: 16px; color: var(--muted); font-size: 0.82rem; font-weight: 750; }
+.traversal-sequence input { width: 100%; padding: 13px 15px; border: 1px solid var(--line); border-radius: 12px; background: #f8faff; color: var(--ink); font: inherit; font-size: 1rem; }
+.traversal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px; }
+.traversal-actions button { padding: 12px 17px; border-radius: 12px; font-weight: 750; cursor: pointer; }
+
+@keyframes traversal-error {
+  50% { transform: translateX(5px); }
+}
 
 .lab-sidebar,
 .lab-canvas-panel {
@@ -537,6 +595,10 @@ dialog small { color: var(--muted); }
   .lesson-copy h1 { font-size: clamp(2.1rem, 9vw, 3.7rem); }
   .lab-layout { grid-template-columns: 1fr; }
   .exercise-layout { grid-template-columns: 1fr; }
+  .traversal-layout { grid-template-columns: 1fr; }
+  .traversal-config { grid-template-columns: 1fr 1fr; }
+  .traversal-config button { grid-column: 1 / -1; }
+  .traversal-tree { min-height: 400px; }
   .project-lab-layout { grid-template-columns: 1fr; }
   .project-lab-screen { height: auto; min-height: calc(100vh - 68px); overflow: visible; }
   .project-lab-layout { flex: none; min-height: auto; }
@@ -566,6 +628,11 @@ dialog small { color: var(--muted); }
   .lab-secondary-actions { grid-column: auto; }
   .graph-editor, .graph-editor svg { min-height: 440px; }
   .lab-instruction { align-items: flex-start; flex-direction: column; }
+  .traversal-board { padding: 12px; }
+  .traversal-config { grid-template-columns: 1fr; }
+  .traversal-config button { grid-column: auto; }
+  .traversal-tree { min-height: 330px; }
+  .traversal-actions { flex-wrap: wrap; }
 }
 
 @media (prefers-reduced-motion: reduce) {

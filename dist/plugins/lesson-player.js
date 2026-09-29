@@ -1,4 +1,4 @@
-import { GraphView } from "./graph-view.js?v=9";
+import { GraphView } from "./graph-view.js?v=26";
 
 export class LessonPlayer {
   constructor({ screen, hub }) {

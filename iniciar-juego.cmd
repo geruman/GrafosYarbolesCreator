@@ -4,7 +4,7 @@ setlocal
 set "CODEX_PYTHON=C:\Users\bernh\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe"
 set "JUEGO_DIR=%~dp0dist"
 set "JUEGO_PORT=4174"
-set "JUEGO_URL=http://localhost:%JUEGO_PORT%/?version=cpmpert14"
+set "JUEGO_URL=http://localhost:%JUEGO_PORT%/?version=posorden-m2-7-32"
 
 if not exist "%CODEX_PYTHON%" (
   echo No se encontro el Python incluido con Codex.

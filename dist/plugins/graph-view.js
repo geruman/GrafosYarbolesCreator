@@ -51,20 +51,47 @@ export class GraphView {
       if (model.directed && edgeModel.directed !== false) edge.setAttribute("marker-end", "url(#graph-arrow)");
       paths.set(`${fromId}:${toId}`, pathData);
       svg.appendChild(edge);
+      if (edgeModel.label !== undefined) {
+        const label = svgElement("text", {
+          x: String((from.x + to.x) / 2),
+          y: String((from.y + to.y) / 2 - 12),
+          class: "graph-edge-label",
+          "text-anchor": "middle",
+        });
+        label.textContent = edgeModel.label;
+        svg.appendChild(label);
+      }
     });
 
     model.nodes.forEach((node) => {
-      const active = focus === "nodes" || focus === "graph" || focus === `node:${node.id}`;
+      const active = node.active || focus === "nodes" || focus === "graph" || focus === `node:${node.id}`;
       const group = svgElement("g", {
-        class: `graph-node${active ? " is-active" : ""}`,
+        class: `graph-node${active ? " is-active" : ""}${node.color ? ` is-${node.color}` : ""}${node.state ? ` is-${node.state}` : ""}`,
         transform: `translate(${node.x} ${node.y})`,
         "data-node": node.id,
       });
-      group.appendChild(svgElement("circle", { r: 35 }));
+      if (node.width) {
+        group.appendChild(svgElement("rect", { x: -node.width / 2, y: -28, width: node.width, height: 56, rx: 13 }));
+      } else {
+        group.appendChild(svgElement("circle", { r: node.radius ?? 35 }));
+      }
       const text = svgElement("text", { "text-anchor": "middle", dy: "0.35em" });
+      if (node.fontSize) text.setAttribute("style", `font-size:${node.fontSize}px`);
       text.textContent = node.label;
       group.appendChild(text);
       svg.appendChild(group);
+      if (node.badge !== undefined) {
+        const nodeRadius = node.radius ?? 35;
+        const badgeRadius = Math.min(14, Math.max(8, nodeRadius * 0.5));
+        const badgeOffset = nodeRadius * 0.82;
+        const badge = svgElement("g", { class: "visit-badge", transform: `translate(${node.x + badgeOffset} ${node.y - badgeOffset})` });
+        badge.appendChild(svgElement("circle", { r: String(badgeRadius) }));
+        const badgeText = svgElement("text", { "text-anchor": "middle", dy: "0.35em" });
+        if (badgeRadius < 12) badgeText.setAttribute("style", `font-size:${Math.max(8, badgeRadius)}px`);
+        badgeText.textContent = node.badge;
+        badge.appendChild(badgeText);
+        svg.appendChild(badge);
+      }
     });
 
     if (travel) this.renderTravel(svg, model, paths, travel);
