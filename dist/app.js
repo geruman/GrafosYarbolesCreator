@@ -1,9 +1,11 @@
-import { LessonPlayer } from "./plugins/lesson-player.js?v=32";
+import { LessonPlayer } from "./plugins/lesson-player.js?v=37";
 import { GraphEditor } from "./plugins/graph-editor.js?v=6";
 import { GuidedExercises } from "./plugins/guided-exercises.js?v=6";
 import { ProjectNetworkEditor } from "./plugins/project-network-editor.js?v=13";
 import { TraversalPractice } from "./plugins/traversal-practice.js?v=32";
-import { lessons } from "./lessons/index.js?v=32";
+import { TreeEditor } from "./plugins/tree-editor.js?v=34";
+import { BstInsertionPractice } from "./plugins/bst-insertion-practice.js?v=37";
+import { lessons } from "./lessons/index.js?v=37";
 
 const topics = {
   M1: [
@@ -17,6 +19,7 @@ const topics = {
     ["Editor libre de grafos", "Elegí el tipo y construí sin consignas", "lab"],
     ["Redes CPM / PERT", "Actividades, tiempos y redes de hasta 50 nodos", "project-lab"],
     ["Recorridos aleatorios", "Preorden, inorden y posorden configurables", "preorder-random"],
+    ["Laboratorio de árboles", "Construí árboles binarios y ABB", "tree-lab"],
   ],
   M2: [
     ["Del grafo al árbol", "La estructura y sus restricciones", "m2-tree-intro"],
@@ -29,11 +32,13 @@ const topics = {
     ["Recorridos aleatorios", "Elegí recorrido, tamaño y corrección", "preorder-random"],
   ],
   M3: [
-    ["Árbol binario de búsqueda", "Orden, búsqueda y operaciones", "m3-bst"],
-    ["AVL", "Equilibrio por altura y rotaciones", "m3-avl"],
-    ["Rojinegros", "Balanceo mediante colores", "m3-red-black"],
-    ["Árboles AA", "Niveles, torsión y división", "m3-aa"],
-    ["Árboles B", "Nodos con múltiples claves", "m3-b-tree"],
+    ["Árbol binario de búsqueda", "Orden, búsqueda y operaciones", "m3-bst", "M3.1"],
+    ["Práctica de inserción ABB", "Ubicá valores respetando el orden", "bst-insertion-practice", "M3.P1"],
+    ["Inserción ABB aleatoria", "Elegí tamaño y forma de corrección", "bst-insertion-random", "M3.P2"],
+    ["AVL", "Equilibrio por altura y rotaciones", "m3-avl", "M3.2"],
+    ["Rojinegros", "Balanceo mediante colores", "m3-red-black", "M3.3"],
+    ["Árboles AA", "Niveles, torsión y división", "m3-aa", "M3.4"],
+    ["Árboles B", "Nodos con múltiples claves", "m3-b-tree", "M3.5"],
   ],
   M4: [
     ["Huffman", "Frecuencias, códigos y compresión", "m4-huffman"],
@@ -57,6 +62,10 @@ const projectLabScreen = document.querySelector("#project-lab-screen");
 const projectNetworkEditor = new ProjectNetworkEditor(projectLabScreen);
 const traversalScreen = document.querySelector("#traversal-screen");
 const traversalPractice = new TraversalPractice(traversalScreen);
+const treeLabScreen = document.querySelector("#tree-lab-screen");
+const treeEditor = new TreeEditor(treeLabScreen);
+const bstPracticeScreen = document.querySelector("#bst-practice-screen");
+const bstInsertionPractice = new BstInsertionPractice(bstPracticeScreen);
 
 function openLab() {
   hubScreen.hidden = true;
@@ -118,22 +127,55 @@ function closeTraversalPractice() {
   window.scrollTo({ top: 0 });
 }
 
+function openTreeLab() {
+  hubScreen.hidden = true;
+  treeLabScreen.hidden = false;
+  document.body.classList.add("lesson-open");
+  window.scrollTo({ top: 0 });
+  treeEditor.open();
+}
+
+function closeTreeLab() {
+  treeLabScreen.hidden = true;
+  hubScreen.hidden = false;
+  document.body.classList.remove("lesson-open");
+  window.scrollTo({ top: 0 });
+}
+
+function openBstPractice(mode = "fixed") {
+  hubScreen.hidden = true;
+  bstPracticeScreen.hidden = false;
+  document.body.classList.add("lesson-open");
+  window.scrollTo({ top: 0 });
+  bstInsertionPractice.open(mode);
+}
+
+function closeBstPractice() {
+  bstPracticeScreen.hidden = true;
+  hubScreen.hidden = false;
+  document.body.classList.remove("lesson-open");
+  window.scrollTo({ top: 0 });
+}
+
 labScreen.querySelector("[data-lab-exit]").addEventListener("click", closeLab);
 exerciseScreen.querySelector("[data-exercise-exit]").addEventListener("click", closeExercises);
 exerciseScreen.addEventListener("exercises:exit", closeExercises);
 projectLabScreen.querySelector("[data-project-exit]").addEventListener("click", closeProjectLab);
 traversalScreen.querySelector("[data-traversal-exit]").addEventListener("click", closeTraversalPractice);
 traversalScreen.addEventListener("traversal:exit", closeTraversalPractice);
+treeLabScreen.querySelector("[data-tree-exit]").addEventListener("click", closeTreeLab);
+bstPracticeScreen.querySelector("[data-bst-exit]").addEventListener("click", closeBstPractice);
+bstPracticeScreen.addEventListener("bst-practice:exit", closeBstPractice);
 
 Object.entries(topics).forEach(([module, items]) => {
   const grid = document.querySelector(`[data-module="${module}"]`);
 
-  items.forEach(([title, description, lessonId], index) => {
+  items.forEach(([title, description, lessonId, topicCode], index) => {
     const button = document.createElement("button");
     button.className = "topic-card";
     button.type = "button";
     button.innerHTML = `
-      <span class="topic-index">${module === "LAB" ? "MODO LIBRE" : `${module}.${index + 1}`}</span>
+      <span class="topic-index">${module === "LAB" ? "MODO LIBRE" : (topicCode ?? `${module}.${index + 1}`)}</span>
       <span class="topic-status ${lessonId ? "is-ready" : ""}">${lessonId ? "Disponible" : "Próximamente"}</span>
       <strong>${title}</strong>
       <small>${description}</small>
@@ -166,6 +208,18 @@ Object.entries(topics).forEach(([module, items]) => {
       }
       if (lessonId === "postorder-practice") {
         openTraversalPractice("postorder");
+        return;
+      }
+      if (lessonId === "tree-lab") {
+        openTreeLab();
+        return;
+      }
+      if (lessonId === "bst-insertion-practice") {
+        openBstPractice();
+        return;
+      }
+      if (lessonId === "bst-insertion-random") {
+        openBstPractice("random");
         return;
       }
       if (lessonId) {
