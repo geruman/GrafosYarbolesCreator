@@ -24,10 +24,25 @@ export class TreeEditor {
     this.panning = null;
     this.zoom = 1;
     this.pan = { x: 0, y: 0 };
+    this.unbalancedIds = new Set();
+    this.pendingManualValue = null;
+    this.placementWrongId = null;
+    this.placementLocked = false;
+    this.randomPractice = false;
 
     screen.querySelectorAll("[data-tree-mode]").forEach((button) => button.addEventListener("click", () => this.setMode(button.dataset.treeMode)));
     screen.querySelectorAll("[data-tree-add]").forEach((button) => button.addEventListener("click", () => this.addBinary(button.dataset.treeAdd)));
     screen.querySelector("[data-tree-insert-bst]").addEventListener("click", () => this.insertBst());
+    screen.querySelector("[data-tree-insert-manual]").addEventListener("click", () => this.insertBst());
+    screen.querySelector("[data-tree-manual-method]").addEventListener("change", () => this.syncManualInsertionUi(true));
+    screen.querySelector("[data-tree-propose-value]").addEventListener("click", () => this.proposeManualValue());
+    screen.querySelectorAll("[data-tree-place-value]").forEach((button) => button.addEventListener("click", () => this.placeManualValue(button.dataset.treePlaceValue)));
+    screen.querySelector("[data-tree-rotate-left]").addEventListener("click", () => this.rotateSelected("left"));
+    screen.querySelector("[data-tree-rotate-right]").addEventListener("click", () => this.rotateSelected("right"));
+    screen.querySelectorAll("[data-tree-check-avl]").forEach((button) => button.addEventListener("click", () => this.checkAvl()));
+    screen.querySelectorAll("[data-tree-generate-avl]").forEach((button) => button.addEventListener("click", () => this.generateAvl()));
+    screen.querySelector("[data-tree-generate-unbalanced]").addEventListener("click", () => this.generateUnbalancedAvl());
+    screen.querySelector("[data-tree-next-random]").addEventListener("click", () => this.generateAvl());
     screen.querySelector("[data-tree-delete]").addEventListener("click", () => this.deleteSelected());
     screen.querySelector("[data-tree-arrange]").addEventListener("click", () => this.arrange(true));
     screen.querySelector("[data-tree-undo]").addEventListener("click", () => this.undo());
@@ -40,7 +55,7 @@ export class TreeEditor {
     this.fileInput.addEventListener("change", () => this.importJson());
     this.valueInput.addEventListener("keydown", (event) => {
       if (event.key !== "Enter") return;
-      if (this.mode === "bst") this.insertBst();
+      if (["bst", "avl", "avl-manual"].includes(this.mode)) this.insertBst();
       else if (!this.rootId) this.addBinary("root");
     });
 
@@ -57,8 +72,24 @@ export class TreeEditor {
     });
   }
 
-  open() {
+  open(mode = this.mode) {
+    this.randomPractice = false;
+    this.screen.querySelector("[data-tree-kicker]").textContent = "Laboratorio · Árboles";
+    this.screen.querySelector("[data-tree-title]").textContent = "Constructor de árboles";
+    if (["binary", "bst", "avl", "avl-manual"].includes(mode) && mode !== this.mode) this.setMode(mode);
     this.render();
+  }
+
+  openRandomPractice() {
+    this.randomPractice = true;
+    this.screen.querySelector("[data-tree-kicker]").textContent = "M3.P6 · Práctica aleatoria";
+    this.screen.querySelector("[data-tree-title]").textContent = "Inserción y rotaciones AVL";
+    if (this.mode !== "avl-manual") this.setMode("avl-manual");
+    const method = this.screen.querySelector("[data-tree-manual-method]");
+    method.value = "choose";
+    this.pendingManualValue = null;
+    this.syncManualInsertionUi();
+    this.generateAvl();
   }
 
   snapshot() {
@@ -67,6 +98,7 @@ export class TreeEditor {
       rootId: this.rootId,
       selectedId: this.selectedId,
       nextId: this.nextId,
+      pendingManualValue: this.pendingManualValue,
       nodes: [...this.nodes.values()].map((node) => ({ ...node })),
     };
   }
@@ -81,29 +113,53 @@ export class TreeEditor {
     this.rootId = state.rootId;
     this.selectedId = state.selectedId;
     this.nextId = state.nextId;
+    this.pendingManualValue = state.pendingManualValue ?? null;
     this.nodes = new Map(state.nodes.map((node) => [node.id, { ...node }]));
+    this.updateUnbalanced();
     this.syncModeUi();
+    this.syncManualInsertionUi();
     this.render();
   }
 
   setMode(mode) {
     if (mode === this.mode) return;
-    if (mode === "bst" && this.nodes.size && !this.isValidBst()) {
+    if (["bst", "avl", "avl-manual"].includes(mode) && this.nodes.size && !this.isValidBst()) {
       this.message("El árbol actual no cumple las reglas de un ABB. Limpiá el lienzo o corregilo antes de cambiar.", true);
       return;
     }
     this.saveHistory();
     this.mode = mode;
+    if (mode !== "avl-manual") this.pendingManualValue = null;
+    this.updateUnbalanced();
     this.syncModeUi();
-    this.message(mode === "bst" ? "Modo ABB: ingresá números y se ubicarán automáticamente." : "Modo binario libre: seleccioná un padre y elegí el lado.");
+    this.message(mode === "avl-manual" ? "Modo AVL manual: insertá sin balanceo, seleccioná pivotes y ejecutá las rotaciones." : (mode === "avl" ? "Modo AVL: insertá números y el árbol se equilibrará automáticamente." : (mode === "bst" ? "Modo ABB: ingresá números y se ubicarán automáticamente." : "Modo binario libre: seleccioná un padre y elegí el lado.")));
     this.render();
   }
 
   syncModeUi() {
     this.screen.querySelectorAll("[data-tree-mode]").forEach((button) => button.classList.toggle("is-active", button.dataset.treeMode === this.mode));
     this.screen.querySelector("[data-tree-binary-actions]").hidden = this.mode !== "binary";
-    this.screen.querySelector("[data-tree-bst-actions]").hidden = this.mode !== "bst";
-    this.valueInput.placeholder = this.mode === "bst" ? "Número, por ejemplo 25" : "Etiqueta, por ejemplo A";
+    this.screen.querySelector("[data-tree-bst-actions]").hidden = !["bst", "avl"].includes(this.mode);
+    this.screen.querySelector("[data-tree-avl-manual-actions]").hidden = this.mode !== "avl-manual";
+    this.screen.querySelector("[data-tree-avl-generator]").hidden = this.mode !== "avl-manual";
+    this.screen.querySelector("[data-tree-avl-check-panel]").hidden = this.mode !== "avl-manual";
+    this.screen.querySelector("[data-tree-insert-bst]").textContent = this.mode === "avl" ? "Insertar y balancear" : "Insertar según orden";
+    this.valueInput.placeholder = this.mode === "binary" ? "Etiqueta, por ejemplo A" : "Número, por ejemplo 25";
+    this.syncManualInsertionUi();
+  }
+
+  syncManualInsertionUi(generate = false) {
+    const chooser = this.screen.querySelector("[data-tree-manual-method]");
+    const choose = this.mode === "avl-manual" && chooser.value === "choose";
+    if (generate && !choose) this.pendingManualValue = null;
+    this.screen.querySelector("[data-tree-manual-auto]").hidden = choose;
+    this.screen.querySelector("[data-tree-manual-position]").hidden = !choose;
+    this.valueInput.hidden = choose;
+    this.screen.querySelector("[data-tree-proposed-value]").textContent = this.pendingManualValue ?? "—";
+    const blocked = choose && this.pendingManualValue !== null;
+    this.screen.querySelector("[data-tree-rotate-left]").disabled = blocked;
+    this.screen.querySelector("[data-tree-rotate-right]").disabled = blocked;
+    if (generate && choose && this.pendingManualValue === null) this.proposeManualValue();
   }
 
   readValue() {
@@ -148,7 +204,7 @@ export class TreeEditor {
   }
 
   insertBst() {
-    if (this.mode !== "bst") return;
+    if (!["bst", "avl", "avl-manual"].includes(this.mode)) return;
     const raw = this.readValue();
     if (raw === null) return;
     const value = Number(raw);
@@ -156,9 +212,13 @@ export class TreeEditor {
     if ([...this.nodes.values()].some((node) => Number(node.value) === value)) return this.message("Ese valor ya existe en el árbol.", true);
     this.saveHistory();
     const node = this.createNode(String(value));
+    const rotations = [];
     if (!this.rootId) {
       this.rootId = node.id;
       this.nodes.set(node.id, node);
+    } else if (this.mode === "avl") {
+      this.nodes.set(node.id, node);
+      this.rootId = this.insertAvlNode(this.rootId, node.id, rotations);
     } else {
       let current = this.nodes.get(this.rootId);
       while (current) {
@@ -174,7 +234,296 @@ export class TreeEditor {
     this.selectedId = node.id;
     this.valueInput.value = "";
     this.arrange(false);
-    this.message(`${value} insertado siguiendo el orden del ABB.`);
+    this.message(this.mode === "avl"
+      ? (rotations.length ? `${value} insertado. Balanceo aplicado: ${rotations.join(" + ")}.` : `${value} insertado. El árbol continúa equilibrado.`)
+      : (this.mode === "avl-manual" ? `${value} insertado sin rotaciones. Ahora podés equilibrar el árbol manualmente.` : `${value} insertado siguiendo el orden del ABB.`));
+    this.updateUnbalanced();
+    this.render();
+  }
+
+  height(id) {
+    if (!id) return 0;
+    const node = this.nodes.get(id);
+    return 1 + Math.max(this.height(node.left), this.height(node.right));
+  }
+
+  balance(id) {
+    const node = this.nodes.get(id);
+    return node ? this.height(node.left) - this.height(node.right) : 0;
+  }
+
+  rotateRight(rootId) {
+    const root = this.nodes.get(rootId);
+    const pivot = this.nodes.get(root.left);
+    root.left = pivot.right;
+    pivot.right = rootId;
+    return pivot.id;
+  }
+
+  rotateLeft(rootId) {
+    const root = this.nodes.get(rootId);
+    const pivot = this.nodes.get(root.right);
+    root.right = pivot.left;
+    pivot.left = rootId;
+    return pivot.id;
+  }
+
+  insertAvlNode(rootId, insertedId, rotations) {
+    if (!rootId) return insertedId;
+    const root = this.nodes.get(rootId);
+    const value = Number(this.nodes.get(insertedId).value);
+    if (value < Number(root.value)) root.left = this.insertAvlNode(root.left, insertedId, rotations);
+    else root.right = this.insertAvlNode(root.right, insertedId, rotations);
+    const factor = this.balance(rootId);
+    if (factor > 1 && value < Number(this.nodes.get(root.left).value)) {
+      rotations.push("rotación derecha");
+      return this.rotateRight(rootId);
+    }
+    if (factor < -1 && value > Number(this.nodes.get(root.right).value)) {
+      rotations.push("rotación izquierda");
+      return this.rotateLeft(rootId);
+    }
+    if (factor > 1 && value > Number(this.nodes.get(root.left).value)) {
+      root.left = this.rotateLeft(root.left);
+      rotations.push("rotación izquierda-derecha");
+      return this.rotateRight(rootId);
+    }
+    if (factor < -1 && value < Number(this.nodes.get(root.right).value)) {
+      root.right = this.rotateRight(root.right);
+      rotations.push("rotación derecha-izquierda");
+      return this.rotateLeft(rootId);
+    }
+    return rootId;
+  }
+
+  updateUnbalanced() {
+    this.unbalancedIds = new Set([...this.nodes.keys()].filter((id) => Math.abs(this.balance(id)) > 1));
+  }
+
+  parentOf(id) {
+    for (const node of this.nodes.values()) {
+      if (node.left === id) return { node, side: "left" };
+      if (node.right === id) return { node, side: "right" };
+    }
+    return null;
+  }
+
+  proposeManualValue() {
+    if (this.mode !== "avl-manual") return;
+    if (!this.rootId) return this.message("Generá un árbol o creá una raíz antes de elegir una posición.", true);
+    const used = new Set([...this.nodes.values()].map((node) => Number(node.value)));
+    const available = Array.from({ length: 190 }, (_, index) => index + 5).filter((value) => !used.has(value));
+    const useful = this.randomPractice ? available.filter((value) => this.insertionWouldUnbalance(value)) : available;
+    const candidates = useful.length ? useful : available;
+    this.pendingManualValue = candidates[Math.floor(Math.random() * candidates.length)];
+    this.placementWrongId = null;
+    this.message(`Ubicá el ${this.pendingManualValue} en la posición que le corresponde según el orden ABB.`);
+    this.syncManualInsertionUi();
+  }
+
+  expectedManualSlot(value) {
+    let current = this.nodes.get(this.rootId);
+    while (current) {
+      const side = value < Number(current.value) ? "left" : "right";
+      if (!current[side]) return { parentId: current.id, side };
+      current = this.nodes.get(current[side]);
+    }
+    return null;
+  }
+
+  insertionWouldUnbalance(value) {
+    const slot = this.expectedManualSlot(value);
+    if (!slot) return false;
+    const parent = this.nodes.get(slot.parentId);
+    const id = "__candidate__";
+    parent[slot.side] = id;
+    this.nodes.set(id, { id, value: String(value), left: null, right: null, x: 0, y: 0 });
+    const unbalanced = [...this.nodes.keys()].some((nodeId) => Math.abs(this.balance(nodeId)) > 1);
+    parent[slot.side] = null;
+    this.nodes.delete(id);
+    return unbalanced;
+  }
+
+  placeManualValue(side) {
+    if (this.mode !== "avl-manual" || this.placementLocked) return;
+    if (this.pendingManualValue === null) return this.message("Primero generá el número que tenés que insertar.", true);
+    const parent = this.nodes.get(this.selectedId);
+    if (!parent) return this.message("Seleccioná el nodo que debería ser su padre.", true);
+    const expected = this.expectedManualSlot(this.pendingManualValue);
+    if (expected.parentId !== parent.id || expected.side !== side || parent[side]) {
+      let previewId = null;
+      if (!parent[side]) {
+        const preview = this.createNode(String(this.pendingManualValue));
+        previewId = preview.id;
+        this.nodes.set(preview.id, preview);
+        parent[side] = preview.id;
+        this.placementWrongId = preview.id;
+        this.arrange(false);
+      } else this.placementWrongId = parent.id;
+      this.placementLocked = true;
+      this.message(`El ${this.pendingManualValue} no corresponde en ese lugar. El intento aparece en rojo.`, true);
+      this.render();
+      window.setTimeout(() => {
+        if (previewId && parent[side] === previewId) parent[side] = null;
+        if (previewId) this.nodes.delete(previewId);
+        this.placementWrongId = null;
+        this.placementLocked = false;
+        if (previewId) this.arrange(false);
+        else this.render();
+      }, 900);
+      return;
+    }
+    this.saveHistory();
+    const node = this.createNode(String(this.pendingManualValue));
+    this.nodes.set(node.id, node);
+    parent[side] = node.id;
+    const insertedValue = this.pendingManualValue;
+    this.pendingManualValue = null;
+    this.selectedId = node.id;
+    this.updateUnbalanced();
+    this.arrange(false);
+    this.syncManualInsertionUi();
+    this.message(`${insertedValue} insertado correctamente. Ahora podés ejecutar las rotaciones necesarias.`);
+    this.render();
+  }
+
+  rotateSelected(direction) {
+    if (this.mode !== "avl-manual") return;
+    if (this.pendingManualValue !== null) return this.message("Primero ubicá correctamente el número propuesto.", true);
+    const pivot = this.nodes.get(this.selectedId);
+    if (!pivot) return this.message("Seleccioná primero el nodo pivote.", true);
+    const childId = direction === "left" ? pivot.right : pivot.left;
+    if (!childId) return this.message(`No se puede rotar a la ${direction === "left" ? "izquierda" : "derecha"}: falta el hijo necesario.`, true);
+    this.saveHistory();
+    const parent = this.parentOf(pivot.id);
+    const newRootId = direction === "left" ? this.rotateLeft(pivot.id) : this.rotateRight(pivot.id);
+    if (parent) parent.node[parent.side] = newRootId;
+    else this.rootId = newRootId;
+    this.selectedId = newRootId;
+    this.arrange(false);
+    this.updateUnbalanced();
+    this.message(`Rotación a la ${direction === "left" ? "izquierda" : "derecha"} aplicada. Podés seguir rotando o comprobar.`);
+    this.render();
+  }
+
+  generateAvl() {
+    if (this.mode !== "avl-manual") return;
+    const counts = { small: 5, medium: 7, large: 15, xlarge: 25 };
+    const count = counts[this.screen.querySelector("[data-tree-avl-size]").value] ?? 7;
+    const pool = Array.from({ length: 90 }, (_, index) => index + 10);
+    this.saveHistory();
+    this.nodes.clear();
+    this.rootId = null;
+    if (this.randomPractice) {
+      for (let attempt = 0; attempt < 60; attempt += 1) {
+        for (let index = pool.length - 1; index > 0; index -= 1) {
+          const other = Math.floor(Math.random() * (index + 1));
+          [pool[index], pool[other]] = [pool[other], pool[index]];
+        }
+        this.nodes.clear();
+        this.rootId = null;
+        pool.slice(0, count).forEach((value) => {
+          const node = this.createNode(String(value));
+          this.nodes.set(node.id, node);
+          this.rootId = this.insertAvlNode(this.rootId, node.id, []);
+        });
+        const used = new Set([...this.nodes.values()].map((node) => Number(node.value)));
+        const hasUsefulInsertion = Array.from({ length: 190 }, (_, index) => index + 5)
+          .some((value) => !used.has(value) && this.insertionWouldUnbalance(value));
+        if (hasUsefulInsertion) break;
+      }
+    } else {
+      for (let index = pool.length - 1; index > 0; index -= 1) {
+        const other = Math.floor(Math.random() * (index + 1));
+        [pool[index], pool[other]] = [pool[other], pool[index]];
+      }
+      const values = pool.slice(0, count);
+      const sorted = values.sort((a, b) => a - b);
+      const build = (items) => {
+        if (!items.length) return null;
+        const middle = Math.floor(items.length / 2);
+        const node = this.createNode(String(items[middle]));
+        this.nodes.set(node.id, node);
+        node.left = build(items.slice(0, middle));
+        node.right = build(items.slice(middle + 1));
+        return node.id;
+      };
+      this.rootId = build(sorted);
+    }
+    this.selectedId = this.rootId;
+    this.pendingManualValue = null;
+    this.placementWrongId = null;
+    this.screen.querySelector("[data-tree-next-random]").hidden = true;
+    this.updateUnbalanced();
+    this.arrange(false);
+    this.fit();
+    if (this.screen.querySelector("[data-tree-manual-method]").value === "choose") this.proposeManualValue();
+    else this.message(`AVL equilibrado de ${count} nodos generado. Insertá un valor sin rotar para comenzar.`);
+    this.syncManualInsertionUi();
+  }
+
+  generateUnbalancedAvl() {
+    if (this.mode !== "avl-manual") return;
+    const counts = { small: 5, medium: 7, large: 15, xlarge: 25 };
+    const count = counts[this.screen.querySelector("[data-tree-avl-size]").value] ?? 7;
+    const pool = Array.from({ length: 190 }, (_, index) => index + 5);
+    let candidate = null;
+    this.saveHistory();
+    for (let attempt = 0; attempt < 80; attempt += 1) {
+      for (let index = pool.length - 1; index > 0; index -= 1) {
+        const other = Math.floor(Math.random() * (index + 1));
+        [pool[index], pool[other]] = [pool[other], pool[index]];
+      }
+      this.nodes.clear();
+      this.rootId = null;
+      pool.slice(0, Math.max(3, count - 1)).forEach((value) => {
+        const node = this.createNode(String(value));
+        this.nodes.set(node.id, node);
+        this.rootId = this.insertAvlNode(this.rootId, node.id, []);
+      });
+      const used = new Set([...this.nodes.values()].map((node) => Number(node.value)));
+      const candidates = pool.filter((value) => !used.has(value) && this.insertionWouldUnbalance(value));
+      if (candidates.length) {
+        candidate = candidates[Math.floor(Math.random() * candidates.length)];
+        break;
+      }
+    }
+    if (candidate === null) return this.message("No se pudo generar el caso. Probá nuevamente.", true);
+    const node = this.createNode(String(candidate));
+    this.nodes.set(node.id, node);
+    if (!this.rootId) this.rootId = node.id;
+    else {
+      let current = this.nodes.get(this.rootId);
+      while (current) {
+        const side = candidate < Number(current.value) ? "left" : "right";
+        if (!current[side]) {
+          current[side] = node.id;
+          break;
+        }
+        current = this.nodes.get(current[side]);
+      }
+    }
+    this.pendingManualValue = null;
+    this.placementWrongId = null;
+    this.selectedId = node.id;
+    this.updateUnbalanced();
+    this.screen.querySelector("[data-tree-next-random]").hidden = true;
+    this.arrange(false);
+    this.fit();
+    this.syncManualInsertionUi();
+    this.message(`Árbol random desbalanceado generado. El último valor insertado fue ${candidate}; encontrá el pivote y corregilo.`);
+  }
+
+  checkAvl() {
+    if (this.mode !== "avl-manual") return;
+    if (this.pendingManualValue !== null) return this.message("Primero ubicá correctamente el número propuesto.", true);
+    this.updateUnbalanced();
+    const validBst = this.isValidBst();
+    if (!validBst) this.message("La estructura dejó de respetar el orden de un ABB.", true);
+    else if (this.unbalancedIds.size) this.message(`Todavía hay ${this.unbalancedIds.size} nodo${this.unbalancedIds.size === 1 ? "" : "s"} desequilibrado${this.unbalancedIds.size === 1 ? "" : "s"}, marcado${this.unbalancedIds.size === 1 ? "" : "s"} en rojo.`, true);
+    else this.message("¡Correcto! El árbol respeta el orden y todos los factores de balance están entre −1 y 1.");
+    this.screen.querySelector("[data-tree-next-random]").hidden = !(this.randomPractice && validBst && this.unbalancedIds.size === 0);
+    this.render();
   }
 
   arrange(save = true) {
@@ -222,6 +571,7 @@ export class TreeEditor {
     }
     doomed.forEach((id) => this.nodes.delete(id));
     this.selectedId = null;
+    this.updateUnbalanced();
     if (this.rootId) this.arrange(false);
     else this.render();
     this.message(`${doomed.size} nodo${doomed.size === 1 ? "" : "s"} eliminado${doomed.size === 1 ? "" : "s"}.`);
@@ -237,7 +587,7 @@ export class TreeEditor {
     this.saveHistory();
     const previous = node.value;
     node.value = value;
-    if (this.mode === "bst" && (!Number.isFinite(Number(value)) || !this.isValidBst())) {
+    if (["bst", "avl", "avl-manual"].includes(this.mode) && (!Number.isFinite(Number(value)) || !this.isValidBst())) {
       node.value = previous;
       this.history.pop();
       this.message("Ese cambio rompería el orden del ABB.", true);
@@ -245,6 +595,7 @@ export class TreeEditor {
       return;
     }
     this.message(`Nodo actualizado a ${value}.`);
+    this.updateUnbalanced();
     this.render();
   }
 
@@ -268,6 +619,10 @@ export class TreeEditor {
     this.nodes.clear();
     this.rootId = null;
     this.selectedId = null;
+    this.unbalancedIds.clear();
+    this.pendingManualValue = null;
+    this.placementWrongId = null;
+    this.syncManualInsertionUi();
     this.render();
     this.message("Lienzo limpio.");
   }
@@ -403,11 +758,16 @@ export class TreeEditor {
       }
     }
     for (const node of this.nodes.values()) {
-      const group = svgElement("g", { class: `tree-editor-node${node.id === this.selectedId ? " is-selected" : ""}`, transform: `translate(${node.x} ${node.y})`, "data-tree-node": node.id });
+      const group = svgElement("g", { class: `tree-editor-node${node.id === this.selectedId ? " is-selected" : ""}${this.mode === "avl-manual" && this.unbalancedIds.has(node.id) ? " is-unbalanced" : ""}${node.id === this.placementWrongId ? " is-placement-wrong" : ""}`, transform: `translate(${node.x} ${node.y})`, "data-tree-node": node.id });
       group.appendChild(svgElement("circle", { r: 31 }));
       const text = svgElement("text", { "text-anchor": "middle", dy: "0.35em" });
       text.textContent = node.value;
       group.appendChild(text);
+      if (this.mode === "avl" || this.mode === "avl-manual") {
+        const detail = svgElement("text", { "text-anchor": "middle", y: "49", class: "tree-avl-detail" });
+        detail.textContent = `h:${this.height(node.id)} · FB:${this.balance(node.id)}`;
+        group.appendChild(detail);
+      }
       world.appendChild(group);
     }
     svg.appendChild(world);
@@ -461,8 +821,8 @@ export class TreeEditor {
       if (visited.size !== data.nodes.length) throw new Error("Hay nodos desconectados de la raíz");
       this.saveHistory();
       saved = true;
-      this.restore({ mode: data.mode === "bst" ? "bst" : "binary", rootId: data.rootId ?? null, selectedId: null, nextId: Number(data.nextId) || data.nodes.length + 1, nodes: data.nodes });
-      if (this.mode === "bst" && !this.isValidBst()) throw new Error("El archivo no contiene un ABB válido");
+      this.restore({ mode: ["bst", "avl", "avl-manual"].includes(data.mode) ? data.mode : "binary", rootId: data.rootId ?? null, selectedId: null, nextId: Number(data.nextId) || data.nodes.length + 1, nodes: data.nodes });
+      if (["bst", "avl", "avl-manual"].includes(this.mode) && !this.isValidBst()) throw new Error("El archivo no contiene un árbol de búsqueda válido");
       this.message("Árbol importado correctamente.");
     } catch (error) {
       if (saved) this.undo();

@@ -8,7 +8,7 @@
     <meta http-equiv="Expires" content="0" />
     <meta name="description" content="Taller interactivo para practicar grafos y árboles." />
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cg fill='none' stroke='%23172B4D' stroke-width='5'%3E%3Cpath d='M32 12 16 32m16-20 16 20M16 32v18m32-18v18'/%3E%3C/g%3E%3Cg fill='%232F6FEB'%3E%3Ccircle cx='32' cy='12' r='8'/%3E%3Ccircle cx='16' cy='32' r='8'/%3E%3Ccircle cx='48' cy='32' r='8'/%3E%3Ccircle cx='16' cy='52' r='8'/%3E%3Ccircle cx='48' cy='52' r='8'/%3E%3C/g%3E%3C/svg%3E" />
-    <link rel="stylesheet" href="./styles.css?v=37" />
+    <link rel="stylesheet" href="./styles.css?v=50" />
     <title>Taller de Estructuras</title>
   </head>
   <body>
@@ -268,6 +268,7 @@
 
         <section class="traversal-board">
           <div id="traversal-tree" class="traversal-tree" aria-label="Árbol interactivo"></div>
+          <p class="practice-navigation-hint">Rueda: zoom · Rueda presionada: mover lienzo</p>
           <label class="traversal-sequence">
             <span>Tu recorrido</span>
             <input type="text" data-traversal-sequence readonly placeholder="Hacé clic en el primer nodo" />
@@ -285,8 +286,8 @@
       <header class="lesson-header">
         <button class="lesson-exit" type="button" data-tree-exit aria-label="Volver al hub">←</button>
         <div class="lesson-heading">
-          <span>Laboratorio · Árboles</span>
-          <strong>Constructor de árboles</strong>
+          <span data-tree-kicker>Laboratorio · Árboles</span>
+          <strong data-tree-title>Constructor de árboles</strong>
         </div>
         <span class="lab-status" data-tree-count>0 nodos</span>
       </header>
@@ -298,6 +299,8 @@
             <div class="tree-mode-switch">
               <button type="button" data-tree-mode="binary">Binario libre</button>
               <button type="button" data-tree-mode="bst">ABB</button>
+              <button type="button" data-tree-mode="avl">AVL</button>
+              <button type="button" data-tree-mode="avl-manual">AVL manual</button>
             </div>
           </div>
           <div>
@@ -310,6 +313,40 @@
             </div>
             <div class="tree-insert-actions" data-tree-bst-actions hidden>
               <button type="button" data-tree-insert-bst>Insertar según orden</button>
+            </div>
+            <div class="tree-insert-actions" data-tree-avl-manual-actions hidden>
+              <select class="tree-value-input" data-tree-manual-method>
+                <option value="automatic">Insertar automáticamente</option>
+                <option value="choose">Elegir la posición</option>
+              </select>
+              <div class="tree-insert-actions" data-tree-manual-auto>
+                <button type="button" data-tree-insert-manual>Insertar sin rotar</button>
+              </div>
+              <div class="tree-manual-position" data-tree-manual-position hidden>
+                <span>Número propuesto</span>
+                <output data-tree-proposed-value>—</output>
+                <button type="button" data-tree-propose-value>Generar número</button>
+                <p>Seleccioná el nodo padre y elegí el lado.</p>
+                <div class="tree-insert-actions">
+                  <button type="button" data-tree-place-value="left">Hijo izquierdo</button>
+                  <button type="button" data-tree-place-value="right">Hijo derecho</button>
+                </div>
+              </div>
+              <button type="button" data-tree-rotate-left>Rotar izquierda</button>
+              <button type="button" data-tree-rotate-right>Rotar derecha</button>
+              <button type="button" data-tree-check-avl>Comprobar AVL</button>
+            </div>
+          </div>
+          <div data-tree-avl-generator hidden>
+            <p class="eyebrow">Autogenerar AVL</p>
+            <select class="tree-value-input" data-tree-avl-size>
+              <option value="small">Chico · 5 nodos</option>
+              <option value="medium" selected>Mediano · 7 nodos</option>
+              <option value="large">Grande · 15 nodos</option>
+              <option value="xlarge">Muy grande · 25 nodos</option>
+            </select>
+            <div class="tree-insert-actions">
+              <button type="button" data-tree-generate-avl>Generar árbol nuevo</button>
             </div>
           </div>
           <div>
@@ -347,6 +384,11 @@
           </div>
           <div id="tree-editor" class="tree-editor" aria-label="Editor de árboles"></div>
           <p class="lab-feedback" data-tree-feedback aria-live="polite">Escribí un valor y creá la raíz.</p>
+          <div class="tree-avl-check-panel" data-tree-avl-check-panel hidden>
+            <button class="primary-button" type="button" data-tree-check-avl>Comprobar árbol AVL</button>
+            <button class="secondary-button" type="button" data-tree-generate-unbalanced>Nuevo árbol random desbalanceado</button>
+            <button class="secondary-button" type="button" data-tree-next-random hidden>Otro ejercicio aleatorio</button>
+          </div>
           <div class="tree-traversals">
             <div><span>Preorden</span><output data-tree-preorder>—</output></div>
             <div><span>Inorden</span><output data-tree-inorder>—</output></div>
@@ -404,6 +446,7 @@
 
         <section class="bst-practice-board">
           <div id="bst-practice-tree" class="bst-practice-tree" aria-label="Árbol binario de búsqueda interactivo"></div>
+          <p class="practice-navigation-hint">Rueda: zoom · Rueda presionada: mover lienzo</p>
           <label class="traversal-sequence">
             <span>Inserciones realizadas</span>
             <input type="text" data-bst-sequence readonly placeholder="Elegí una posición vacía (+)" />
@@ -412,6 +455,137 @@
             <button type="button" class="lesson-back" data-bst-reset>Empezar de nuevo</button>
             <button type="button" class="lesson-next" data-bst-check hidden>Comprobar</button>
             <button type="button" class="lesson-next" data-bst-next hidden>Siguiente ejercicio →</button>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <main id="avl-rotation-screen" class="lab-screen bst-practice-screen" data-screen="avl-rotation" hidden>
+      <header class="lesson-header">
+        <button class="lesson-exit" type="button" data-avl-rotation-exit aria-label="Volver al hub">←</button>
+        <div class="lesson-heading">
+          <span>M3.P4 · Rotaciones AVL</span>
+          <strong>Práctica guiada de rotaciones</strong>
+        </div>
+        <span class="lesson-count" data-avl-rotation-counter>1 / 12</span>
+      </header>
+      <div class="lesson-progress"><span data-avl-rotation-progress></span></div>
+
+      <section class="bst-practice-layout avl-rotation-layout">
+        <aside class="traversal-guide">
+          <p class="eyebrow" data-avl-rotation-level>Izquierda 1</p>
+          <h1 data-avl-rotation-title>Rotación simple a la izquierda</h1>
+          <p>Seleccioná el pivote y aplicá una o más rotaciones. El factor de balance es altura izquierda menos altura derecha.</p>
+          <div class="avl-rotation-actions">
+            <button type="button" data-avl-rotate-left>↶ Rotar izquierda</button>
+            <button type="button" data-avl-rotate-right>↷ Rotar derecha</button>
+            <button type="button" data-avl-rotation-undo>Deshacer rotación</button>
+            <button type="button" data-avl-rotation-reset>Reiniciar</button>
+          </div>
+          <p class="traversal-feedback" data-avl-rotation-feedback aria-live="polite"></p>
+          <div class="traversal-actions">
+            <button class="secondary-button" type="button" data-avl-rotation-check>Comprobar</button>
+            <button class="primary-button" type="button" data-avl-rotation-next hidden>Siguiente ejercicio →</button>
+          </div>
+        </aside>
+
+        <section class="bst-practice-board">
+          <div id="avl-rotation-tree" class="bst-practice-tree" aria-label="Árbol AVL para rotar"></div>
+          <p class="practice-navigation-hint">Clic: elegir pivote · Rueda: zoom · Rueda presionada: mover lienzo</p>
+        </section>
+      </section>
+    </main>
+
+    <main id="red-black-practice-screen" class="lab-screen bst-practice-screen" data-screen="red-black-practice" hidden>
+      <header class="lesson-header">
+        <button class="lesson-exit" type="button" data-rbp-exit aria-label="Volver al hub">←</button>
+        <div class="lesson-heading">
+          <span>M3.P7 · Práctica guiada</span>
+          <strong>Reparaciones rojinegras</strong>
+        </div>
+        <span class="lesson-count" data-rbp-counter>1 / 8</span>
+      </header>
+      <div class="lesson-progress"><span data-rbp-progress></span></div>
+      <section class="bst-practice-layout">
+        <aside class="traversal-guide">
+          <p class="eyebrow" data-rbp-level>Recoloreo 1</p>
+          <h1 data-rbp-title>Padre y tío rojos</h1>
+          <p>Elegí la reparación. Primer clic: seleccionar · Segundo clic sobre el mismo nodo: recolorear.</p>
+          <div class="avl-rotation-actions">
+            <button type="button" data-rbp-recolor>Aplicar recoloreo automático</button>
+            <button type="button" data-rbp-left>Rotación izquierda</button>
+            <button type="button" data-rbp-right>Rotación derecha</button>
+            <button type="button" data-rbp-reset>Reiniciar ejercicio</button>
+          </div>
+          <p class="traversal-feedback" data-rbp-feedback aria-live="polite"></p>
+          <div class="traversal-actions">
+            <button class="primary-button" type="button" data-rbp-next hidden>Siguiente ejercicio →</button>
+          </div>
+        </aside>
+        <section class="bst-practice-board">
+          <div id="red-black-practice-tree" class="bst-practice-tree" aria-label="Ejercicio de reparación rojinegra"></div>
+          <p class="practice-navigation-hint">Clic: elegir pivote · Rueda: zoom · Rueda presionada: mover lienzo</p>
+        </section>
+      </section>
+    </main>
+
+    <main id="red-black-lab-screen" class="lab-screen tree-lab-screen" data-screen="red-black-lab" hidden>
+      <header class="lesson-header">
+        <button class="lesson-exit" type="button" data-rb-exit aria-label="Volver al hub">←</button>
+        <div class="lesson-heading">
+          <span data-rb-kicker>M3 · Laboratorio</span>
+          <strong data-rb-title>Árboles rojinegros</strong>
+        </div>
+        <span class="lab-status" data-rb-count>0 nodos</span>
+      </header>
+
+      <section class="tree-lab-layout">
+        <aside class="lab-sidebar tree-sidebar">
+          <div data-rb-standard-insert>
+            <p class="eyebrow">Insertar como ABB</p>
+            <input class="tree-value-input" type="number" data-rb-value placeholder="Número, por ejemplo 25" />
+            <div class="tree-insert-actions">
+              <button type="button" data-rb-insert>Insertar nodo rojo</button>
+            </div>
+          </div>
+          <div class="tree-manual-position" data-rb-practice-panel hidden>
+            <span>Valor para insertar en rojo</span>
+            <output data-rb-proposed-value>—</output>
+            <p>Seleccioná el nodo padre y elegí el lado correcto.</p>
+            <div class="tree-insert-actions">
+              <button type="button" data-rb-place="left">Hijo izquierdo</button>
+              <button type="button" data-rb-place="right">Hijo derecho</button>
+            </div>
+          </div>
+          <div>
+            <p class="eyebrow">Operaciones manuales</p>
+            <div class="tree-insert-actions">
+              <button type="button" data-rb-recolor>Recolorear selección</button>
+              <button type="button" data-rb-rotate-left>Rotación izquierda</button>
+              <button type="button" data-rb-rotate-right>Rotación derecha</button>
+              <button type="button" data-rb-check>Comprobar propiedades</button>
+            </div>
+          </div>
+          <div>
+            <p class="eyebrow">Edición</p>
+            <div class="tree-insert-actions">
+              <button type="button" data-rb-random-unbalanced>Árbol al azar desbalanceado</button>
+              <button type="button" data-rb-undo>Deshacer</button>
+              <button type="button" data-rb-clear>Limpiar</button>
+            </div>
+          </div>
+        </aside>
+
+        <section class="tree-canvas-panel">
+          <div class="lab-instruction">
+            <strong>Reparación manual</strong>
+            <span>Clic: seleccionar · Otro clic: recolorear · Rueda: zoom · Botón central: mover lienzo</span>
+          </div>
+          <div id="red-black-editor" class="tree-editor red-black-editor" aria-label="Editor de árboles rojinegros"></div>
+          <p class="lab-feedback" data-rb-feedback aria-live="polite">Insertá la raíz para comenzar.</p>
+          <div class="tree-avl-check-panel">
+            <button class="primary-button" type="button" data-rb-check>Comprobar árbol rojinegro</button>
+            <button class="secondary-button" type="button" data-rb-next-random hidden>Otro ejercicio aleatorio</button>
           </div>
         </section>
       </section>
@@ -522,6 +696,6 @@
       <button class="dialog-action" type="button">Volver al hub</button>
     </dialog>
 
-    <script type="module" src="./app.js?v=37"></script>
+    <script type="module" src="./app.js?v=55"></script>
   </body>
 </html>

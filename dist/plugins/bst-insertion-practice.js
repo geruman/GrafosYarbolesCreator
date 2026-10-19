@@ -72,11 +72,19 @@ export class BstInsertionPractice {
     this.wrongSlot = null;
     this.wrongNodes = new Set();
     this.locked = false;
+    this.view = null;
+    this.panning = null;
 
     this.canvas.addEventListener("click", (event) => {
       const slot = event.target.closest("[data-bst-slot]");
       if (slot) this.chooseSlot(slot.dataset.parent, slot.dataset.side);
     });
+    this.canvas.addEventListener("wheel", (event) => this.zoom(event), { passive: false });
+    this.canvas.addEventListener("pointerdown", (event) => this.beginPan(event));
+    this.canvas.addEventListener("auxclick", (event) => event.preventDefault());
+    window.addEventListener("pointermove", (event) => this.movePan(event));
+    window.addEventListener("pointerup", () => this.endPan());
+    window.addEventListener("pointercancel", () => this.endPan());
     this.resetButton.addEventListener("click", () => this.loadLevel());
     this.checkButton.addEventListener("click", () => this.checkFree());
     this.nextButton.addEventListener("click", () => this.nextLevel());
@@ -110,12 +118,13 @@ export class BstInsertionPractice {
     this.wrongSlot = null;
     this.wrongNodes.clear();
     this.locked = false;
+    this.view = null;
     this.screen.querySelector("[data-bst-counter]").textContent = this.mode === "random" ? `${level.tree.nodes.length} nodos` : `${this.levelIndex + 1} / ${LEVELS.length}`;
     this.screen.querySelector("[data-bst-progress]").style.width = this.mode === "random" ? "100%" : `${((this.levelIndex + 1) / LEVELS.length) * 100}%`;
     this.screen.querySelector("[data-bst-level]").textContent = level.label;
     this.screen.querySelector("[data-bst-title]").textContent = level.title;
     this.screen.querySelector("[data-bst-instruction]").textContent = level.instruction;
-    this.feedback.textContent = level.kind === "free" ? "Ubicá los cuatro valores y comprobá al final." : "Compará el valor con la raíz y elegí un espacio vacío.";
+    this.feedback.textContent = level.kind === "free" ? `Ubicá los ${level.values.length} valores y comprobá al final.` : `Tenés que insertar ${level.values.length} valor${level.values.length === 1 ? "" : "es"}. Compará desde la raíz.`;
     this.feedback.className = "traversal-feedback";
     this.resetButton.hidden = false;
     this.checkButton.hidden = level.kind !== "free";
@@ -268,7 +277,7 @@ export class BstInsertionPractice {
     const counts = { small: 7, medium: 11, large: 15, xlarge: 20 };
     const count = counts[this.sizeSelect.value] ?? 7;
     const kind = this.correctionSelect.value;
-    const insertionCount = { guided: 1, reset: 2, free: 4 }[kind];
+    const insertionCount = { small: 2, medium: 4, large: 6, xlarge: 8 }[this.sizeSelect.value] ?? 2;
     const pool = Array.from({ length: 90 }, (_, index) => index + 10);
     for (let index = pool.length - 1; index > 0; index -= 1) {
       const other = Math.floor(Math.random() * (index + 1));
@@ -292,9 +301,9 @@ export class BstInsertionPractice {
     };
     const root = build(baseValues);
     const descriptions = {
-      guided: ["Corrección guiada", "Encontrá la posición correcta", "El nodo incorrecto aparecerá en rojo y después podrás reintentar."],
-      reset: ["Desafío sin errores", "Insertá dos valores seguidos", "Una posición incorrecta muestra el nodo rojo y reinicia el ejercicio."],
-      free: ["Comprobación final", "Insertá cuatro valores sin ayuda", "Ubicá todos los valores y comprobá el árbol completo al terminar."],
+      guided: ["Corrección guiada", `Insertá ${insertionCount} valores con ayuda`, "El nodo incorrecto aparecerá en rojo y después podrás reintentar."],
+      reset: ["Desafío sin errores", `Insertá ${insertionCount} valores seguidos`, "Una posición incorrecta muestra el nodo rojo y reinicia el ejercicio."],
+      free: ["Comprobación final", `Insertá ${insertionCount} valores sin ayuda`, "Ubicá todos los valores y comprobá el árbol completo al terminar."],
     };
     const [label, title, instruction] = descriptions[kind];
     this.dynamicLevel = { kind, label, title, instruction, values, tree: { root, nodes } };
@@ -315,17 +324,67 @@ export class BstInsertionPractice {
     walk(this.rootId, 0);
     const positions = new Map();
     order.forEach((id, index) => positions.set(id, {
-      x: order.length === 1 ? 320 : 55 + index * (530 / (order.length - 1)),
+      x: order.length === 1 ? 320 : 35 + index * (570 / (order.length - 1)),
       y: 45 + depths.get(id) * 105,
     }));
     return positions;
   }
 
+  applyView() {
+    const svg = this.canvas.querySelector("svg");
+    if (svg && this.view) svg.setAttribute("viewBox", `${this.view.x} ${this.view.y} ${this.view.width} ${this.view.height}`);
+  }
+
+  zoom(event) {
+    const svg = this.canvas.querySelector("svg");
+    if (!svg || !this.view) return;
+    event.preventDefault();
+    const bounds = svg.getBoundingClientRect();
+    if (!bounds.width || !bounds.height) return;
+    const rx = (event.clientX - bounds.left) / bounds.width;
+    const ry = (event.clientY - bounds.top) / bounds.height;
+    const factor = event.deltaY < 0 ? 0.86 : 1 / 0.86;
+    const width = Math.max(180, Math.min(3200, this.view.width * factor));
+    const scale = width / this.view.width;
+    const height = this.view.height * scale;
+    const worldX = this.view.x + rx * this.view.width;
+    const worldY = this.view.y + ry * this.view.height;
+    this.view = { x: worldX - rx * width, y: worldY - ry * height, width, height };
+    this.applyView();
+  }
+
+  beginPan(event) {
+    if (event.button !== 1 || !this.view) return;
+    event.preventDefault();
+    this.panning = { clientX: event.clientX, clientY: event.clientY, x: this.view.x, y: this.view.y };
+    this.canvas.classList.add("is-panning");
+  }
+
+  movePan(event) {
+    if (!this.panning || !this.view) return;
+    const bounds = this.canvas.getBoundingClientRect();
+    this.view.x = this.panning.x - ((event.clientX - this.panning.clientX) / bounds.width) * this.view.width;
+    this.view.y = this.panning.y - ((event.clientY - this.panning.clientY) / bounds.height) * this.view.height;
+    this.applyView();
+  }
+
+  endPan() {
+    this.panning = null;
+    this.canvas.classList.remove("is-panning");
+  }
+
   render() {
     const positions = this.layout();
+    const visualCount = Math.max(this.nodes.size, this.level.tree.nodes.length + this.level.values.length);
+    const nodeRadius = visualCount > 22 ? 10 : (visualCount > 17 ? 13 : (visualCount > 12 ? 17 : 27));
+    const nodeFontSize = visualCount > 22 ? 9 : (visualCount > 17 ? 11 : (visualCount > 12 ? 13 : 16));
+    const slotRadius = Math.max(7, Math.round(nodeRadius * 0.62));
+    const slotOffsetX = nodeRadius + 10;
+    const slotOffsetY = nodeRadius + 42;
     this.canvas.replaceChildren();
     const viewHeight = Math.max(470, ...[...positions.values()].map((position) => position.y + 105));
-    const svg = svgElement("svg", { viewBox: `0 0 640 ${viewHeight}`, role: "img", "aria-label": "Ejercicio de inserción en ABB" });
+    if (!this.view) this.view = { x: 0, y: 0, width: 640, height: viewHeight };
+    const svg = svgElement("svg", { viewBox: `${this.view.x} ${this.view.y} ${this.view.width} ${this.view.height}`, role: "img", "aria-label": "Ejercicio de inserción en ABB" });
 
     for (const node of this.nodes.values()) {
       const from = positions.get(node.id);
@@ -339,8 +398,9 @@ export class BstInsertionPractice {
     for (const node of this.nodes.values()) {
       const position = positions.get(node.id);
       const group = svgElement("g", { class: `bst-practice-node${node.inserted ? " is-inserted" : ""}${this.wrongNodes.has(node.id) ? " is-wrong" : ""}`, transform: `translate(${position.x} ${position.y})` });
-      group.appendChild(svgElement("circle", { r: "27" }));
+      group.appendChild(svgElement("circle", { r: String(nodeRadius) }));
       const text = svgElement("text", { "text-anchor": "middle", dy: "0.35em" });
+      text.setAttribute("style", `font-size:${nodeFontSize}px`);
       text.textContent = node.value;
       group.appendChild(text);
       svg.appendChild(group);
@@ -351,13 +411,14 @@ export class BstInsertionPractice {
         const position = positions.get(node.id);
         for (const side of ["left", "right"]) {
           if (node[side]) continue;
-          const x = position.x + (side === "left" ? -38 : 38);
-          const y = position.y + 72;
+          const x = position.x + (side === "left" ? -slotOffsetX : slotOffsetX);
+          const y = position.y + slotOffsetY;
           const key = `${node.id}:${side}`;
-          svg.appendChild(svgElement("line", { x1: position.x, y1: position.y + 28, x2: x, y2: y - 17, class: "bst-slot-edge" }));
+          svg.appendChild(svgElement("line", { x1: position.x, y1: position.y + nodeRadius, x2: x, y2: y - slotRadius, class: "bst-slot-edge" }));
           const slot = svgElement("g", { class: `bst-slot${this.wrongSlot === key ? " is-wrong" : ""}`, transform: `translate(${x} ${y})`, "data-bst-slot": key, "data-parent": node.id, "data-side": side });
-          slot.appendChild(svgElement("circle", { r: "17" }));
+          slot.appendChild(svgElement("circle", { r: String(slotRadius) }));
           const plus = svgElement("text", { "text-anchor": "middle", dy: "0.35em" });
+          plus.setAttribute("style", `font-size:${Math.max(12, slotRadius * 1.3)}px`);
           plus.textContent = "+";
           slot.appendChild(plus);
           svg.appendChild(slot);

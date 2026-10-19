@@ -126,11 +126,19 @@ export class TraversalPractice {
     this.selected = [];
     this.wrongId = null;
     this.locked = false;
+    this.view = { x: 0, y: 0, width: 640, height: 430 };
+    this.panning = null;
 
     this.treeElement.addEventListener("click", (event) => {
       const node = event.target.closest("[data-node]");
       if (node) this.selectNode(node.dataset.node);
     });
+    this.treeElement.addEventListener("wheel", (event) => this.zoom(event), { passive: false });
+    this.treeElement.addEventListener("pointerdown", (event) => this.beginPan(event));
+    this.treeElement.addEventListener("auxclick", (event) => event.preventDefault());
+    window.addEventListener("pointermove", (event) => this.movePan(event));
+    window.addEventListener("pointerup", () => this.endPan());
+    window.addEventListener("pointercancel", () => this.endPan());
     this.clearButton.addEventListener("click", () => this.resetAttempt());
     this.checkButton.addEventListener("click", () => this.checkFreeAttempt());
     this.nextButton.addEventListener("click", () => this.nextLevel());
@@ -163,6 +171,7 @@ export class TraversalPractice {
     this.selected = [];
     this.wrongId = null;
     this.locked = false;
+    this.resetView();
     const level = this.level;
     this.screen.querySelector("[data-traversal-counter]").textContent = this.mode === "preorder-random" ? `${level.nodes.length} nodos` : `${this.levelIndex + 1} / ${this.levels.length}`;
     this.screen.querySelector("[data-traversal-progress]").style.width = `${((this.levelIndex + 1) / this.levels.length) * 100}%`;
@@ -356,6 +365,52 @@ export class TraversalPractice {
     return this.level.nodes.find((node) => node.id === id)?.label ?? id;
   }
 
+  resetView() {
+    this.view = { x: 0, y: 0, width: 640, height: 430 };
+  }
+
+  applyView() {
+    const svg = this.treeElement.querySelector("svg");
+    if (svg) svg.setAttribute("viewBox", `${this.view.x} ${this.view.y} ${this.view.width} ${this.view.height}`);
+  }
+
+  zoom(event) {
+    const svg = this.treeElement.querySelector("svg");
+    if (!svg) return;
+    event.preventDefault();
+    const bounds = svg.getBoundingClientRect();
+    if (!bounds.width || !bounds.height) return;
+    const rx = (event.clientX - bounds.left) / bounds.width;
+    const ry = (event.clientY - bounds.top) / bounds.height;
+    const factor = event.deltaY < 0 ? 0.86 : 1 / 0.86;
+    const width = Math.max(180, Math.min(2560, this.view.width * factor));
+    const height = width * (430 / 640);
+    const worldX = this.view.x + rx * this.view.width;
+    const worldY = this.view.y + ry * this.view.height;
+    this.view = { x: worldX - rx * width, y: worldY - ry * height, width, height };
+    this.applyView();
+  }
+
+  beginPan(event) {
+    if (event.button !== 1) return;
+    event.preventDefault();
+    this.panning = { clientX: event.clientX, clientY: event.clientY, x: this.view.x, y: this.view.y };
+    this.treeElement.classList.add("is-panning");
+  }
+
+  movePan(event) {
+    if (!this.panning) return;
+    const bounds = this.treeElement.getBoundingClientRect();
+    this.view.x = this.panning.x - ((event.clientX - this.panning.clientX) / bounds.width) * this.view.width;
+    this.view.y = this.panning.y - ((event.clientY - this.panning.clientY) / bounds.height) * this.view.height;
+    this.applyView();
+  }
+
+  endPan() {
+    this.panning = null;
+    this.treeElement.classList.remove("is-panning");
+  }
+
   updateView() {
     const model = {
       label: `Árbol para practicar recorrido ${this.level.traversal ?? "preorden"}`,
@@ -368,6 +423,7 @@ export class TraversalPractice {
       edges: this.level.edges,
     };
     this.graph.render(model, "none");
+    this.applyView();
     this.sequenceInput.value = this.selected.map((id) => this.labelFor(id)).join(" → ");
   }
 }

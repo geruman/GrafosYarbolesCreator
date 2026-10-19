@@ -1570,6 +1570,24 @@ export const lessons = {
       },
       {
         label: "Caso 1: tío rojo",
+        title: "El conflicto aparece entre el nodo y su padre",
+        text: "Insertamos 3 como rojo. Como su padre 5 también es rojo, aparece una violación rojo–rojo. Antes de rotar debemos mirar al tío 15, que en este caso también es rojo.",
+        key: "Nodo rojo + padre rojo → revisar el color del tío",
+        caption: "El nuevo 3, su padre 5 y su tío 15 están resaltados antes de reparar el árbol.",
+        focus: "none",
+        graph: {
+          label: "Conflicto rojo rojo con tío rojo",
+          directed: false,
+          nodes: [
+            { id: "n10", label: "10", x: 320, y: 45, color: "black" },
+            { id: "n5", label: "5", x: 175, y: 180, color: "red", active: true }, { id: "n15", label: "15", x: 465, y: 180, color: "red", active: true },
+            { id: "n3", label: "3", x: 95, y: 350, color: "red", active: true },
+          ],
+          edges: [["n10", "n5"], ["n10", "n15"], { from: "n5", to: "n3", active: true }],
+        },
+      },
+      {
+        label: "Caso 1: reparación",
         title: "Recoloreamos y continuamos hacia arriba",
         text: "Si el padre y el tío son rojos, ambos pasan a negro y el abuelo pasa a rojo. Luego revisamos el árbol desde el abuelo; si es la raíz, finalmente queda negro.",
         key: "Padre rojo + tío rojo → recolorear",
@@ -1606,6 +1624,24 @@ export const lessons = {
       },
       {
         label: "Caso 3: posición externa",
+        title: "La primera rotación convierte el quiebre en una línea",
+        text: "Rotamos 5 hacia la izquierda. El 8 ocupa su lugar y el 5 queda como hijo izquierdo. Todavía existe un conflicto rojo–rojo, pero ahora el patrón es externo y puede repararse desde el abuelo.",
+        key: "Caso interno → rotar al padre → caso externo",
+        caption: "Después del primer giro queda la línea 10–8–5, lista para la rotación final.",
+        focus: "none",
+        graph: {
+          label: "Caso externo obtenido después de rotar el padre",
+          directed: false,
+          nodes: [
+            { id: "n10", label: "10", x: 430, y: 65, color: "black" },
+            { id: "n8", label: "8", x: 300, y: 205, color: "red", active: true },
+            { id: "n5", label: "5", x: 180, y: 350, color: "red", active: true },
+          ],
+          edges: [{ from: "n10", to: "n8", active: true }, { from: "n8", to: "n5", active: true }],
+        },
+      },
+      {
+        label: "Caso 3: reparación final",
         title: "Rotamos el abuelo y cambiamos colores",
         text: "Con el nodo en posición externa y el tío negro, rotamos sobre el abuelo. El nodo central queda negro y el antiguo abuelo queda rojo. Los casos hacia la derecha son simétricos.",
         key: "Caso externo → rotar al abuelo + recolorear",

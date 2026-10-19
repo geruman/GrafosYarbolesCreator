@@ -452,8 +452,28 @@ h2 { margin: 0; font-size: 1.45rem; letter-spacing: -0.02em; }
 .tree-editor-node:active { cursor: grabbing; }
 .tree-editor-node circle { fill: white; stroke: var(--ink); stroke-width: 4; }
 .tree-editor-node text { fill: var(--ink); font-size: 16px; font-weight: 850; pointer-events: none; }
+.tree-editor-node .tree-avl-detail { fill: var(--muted); font-size: 11px; font-weight: 750; }
 .tree-editor-node.is-selected circle { fill: var(--accent); stroke: var(--accent); }
 .tree-editor-node.is-selected text { fill: white; }
+.tree-editor-node.is-unbalanced circle { fill: #fee2e2; stroke: #d73545; }
+.tree-editor-node.is-unbalanced:not(.is-selected) > text:not(.tree-avl-detail) { fill: #a51f2d; }
+.tree-avl-check-panel { display: flex; justify-content: flex-end; gap: 10px; margin: 12px 4px 4px; }
+.tree-avl-check-panel[hidden] { display: none; }
+.tree-manual-position { display: grid; gap: 8px; padding: 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-soft); }
+.tree-manual-position[hidden] { display: none; }
+.tree-manual-position > span, .tree-manual-position > p { margin: 0; color: var(--muted); font-size: .78rem; }
+.tree-manual-position output { color: var(--accent); font-size: 1.8rem; font-weight: 850; }
+.tree-editor-node.is-placement-wrong circle { fill: #e84d5b; stroke: #ae2635; }
+.tree-editor-node.is-placement-wrong > text { fill: white; }
+.red-black-editor.is-panning { cursor: grabbing; }
+.rb-lab-node { cursor: pointer; }
+.rb-lab-node circle { stroke-width: 4; }
+.rb-lab-node text { fill: white; font-size: 16px; font-weight: 850; pointer-events: none; }
+.rb-lab-node.is-black circle { fill: #15223a; stroke: #071021; }
+.rb-lab-node.is-red circle { fill: #df3b47; stroke: #9e202b; }
+.rb-lab-node.is-selected circle { stroke: #2f6feb; stroke-width: 7; }
+.rb-lab-node.is-wrong circle { stroke: #ffb020; stroke-width: 9; }
+.rb-lab-node.is-placement-wrong circle { stroke: #ffb020; stroke-width: 9; }
 .tree-traversals { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
 .tree-traversals div { min-width: 0; padding: 12px; border-radius: 12px; background: #f5f7fb; }
 .tree-traversals span { display: block; margin-bottom: 6px; color: var(--muted); font-size: 0.76rem; font-weight: 750; text-transform: uppercase; }
@@ -467,6 +487,8 @@ h2 { margin: 0; font-size: 1.45rem; letter-spacing: -0.02em; }
 .bst-next-value strong { color: var(--accent); font-size: 2rem; }
 .bst-practice-tree { display: grid; min-height: 500px; overflow: hidden; border-radius: 16px; background: radial-gradient(circle at 1px 1px, #dfe5ef 1px, transparent 1.5px) 0 0 / 24px 24px, #fafbfe; place-items: center; }
 .bst-practice-tree svg { display: block; width: 100%; max-height: 520px; }
+.practice-navigation-hint { margin: 8px 2px 0; color: var(--muted); font-size: .78rem; text-align: right; }
+.traversal-tree.is-panning, .bst-practice-tree.is-panning { cursor: grabbing; }
 .bst-practice-edge { stroke: #8190a6; stroke-width: 5; stroke-linecap: round; }
 .bst-practice-node circle { fill: white; stroke: var(--ink); stroke-width: 4; }
 .bst-practice-node text { fill: var(--ink); font-size: 16px; font-weight: 850; }
@@ -474,6 +496,13 @@ h2 { margin: 0; font-size: 1.45rem; letter-spacing: -0.02em; }
 .bst-practice-node.is-inserted text { fill: #164da9; }
 .bst-practice-node.is-wrong circle { fill: #e84d5b; stroke: #ae2635; }
 .bst-practice-node.is-wrong text { fill: white; }
+.avl-rotation-actions { display: grid; gap: 9px; margin-top: 22px; }
+.avl-rotation-actions button { min-height: 42px; border: 1px solid var(--line); border-radius: 11px; background: white; color: var(--ink); font-weight: 750; cursor: pointer; }
+.avl-rotation-actions button:hover { border-color: var(--accent); color: var(--accent); }
+.avl-rotation-node { cursor: pointer; }
+.avl-rotation-node.is-selected circle { fill: var(--accent); stroke: var(--accent); }
+.avl-rotation-node.is-selected > text:not(.avl-balance-label) { fill: white; }
+.avl-rotation-node .avl-balance-label { fill: var(--muted); font-size: 12px; font-weight: 800; }
 .bst-slot-edge { stroke: #c7d0de; stroke-width: 2; stroke-dasharray: 5 5; }
 .bst-slot { cursor: pointer; }
 .bst-slot circle { fill: white; stroke: #9aabc2; stroke-width: 3; stroke-dasharray: 4 3; }
